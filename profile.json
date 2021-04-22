@@ -1,0 +1,38 @@
+[
+    {
+        "profileName": "KA1",
+        "firstName": "Junyu",
+        "lastName": "Wang",
+        "email": "jw6602@nyu.edu",
+        "phone":"2019771400",
+        "state":"New Jersey",
+        "city": "Jersey City",
+        "line1": "LSOQ 485 Marin BLVD. Apt 1733",
+        "line2": "1733",
+        "postalCode": "07302",
+        "cc": {
+            "cc_number": "4767718220860805",
+            "exp_month":"04",
+            "exp_year":"2027",
+            "cvv":"787"
+        }
+    },
+    {
+        "profileName": "KA2",
+        "firstName": "Junyu",
+        "lastName": "Wang",
+        "email": "jwang2284@uwalumni.com",
+        "phone":"2011400977",
+        "state":"New Jersey",
+        "city": "Jersey City",
+        "line1": "YDYS 485 Marin BLVD. Apt 1733",
+        "line2": "1733",
+        "postalCode": "07302",
+        "cc": {
+            "cc_number": "4767718451944112",
+            "exp_month":"04",
+            "exp_year":"2027",
+            "cvv":"495"
+        }
+    }
+]
