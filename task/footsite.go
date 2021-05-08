@@ -110,12 +110,14 @@ func (s *FtsSession) GetSizeID() error {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
 	req.Header.Set("X-Fl-Request-Id", s.UUID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Origin", fmt.Sprintf("https://www.%s.com", s.Site))
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
 	req.Header.Set("Sec-Fetch-Mode", "cors")
 	req.Header.Set("Sec-Fetch-Dest", "empty")
 	req.Header.Set("Referer", fmt.Sprintf("https://www.%s.com", s.Site))
 	req.Header.Set("Accept-Language", "zh-CN,zh;q=0.9")
+	req.Header.Set("Cookie", "JSESSIONID="+s.JSESSIONID)
 	resp, err := s.Client.Do(req)
 	if err != nil {
 		return err
@@ -164,6 +166,7 @@ func (s *FtsSession) AddToCart() error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://www.%s.com/api/users/carts/current/entries?timestamp=%v", s.Site, time.Now().UnixNano()/int64(time.Millisecond)), bytes.NewReader(payloadBytes))
 	req.Header.Set("X-Csrf-Token", s.CSRF)
 	req.Header.Set("X-Fl-Productid", s.SizeID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
@@ -205,15 +208,17 @@ func (s *FtsSession) AddToCart() error {
 		// fmt.Println(string(body))
 		return errors.New("429")
 	case 403:
-		// TODO
+		// TO BE TESTED
 		// Add Capmonster Support
 		data := map[string]string{}
 		err = json.Unmarshal(body, &data)
 		if err != nil {
 			return err
 		}
-		/*
+
 		captchaURL := data["url"]
+		fmt.Println(captchaURL)
+		// Decode captchaURL
 		u, _ := url.Parse(captchaURL)
 		q := u.Query()
 		if q.Get("cid") == "" || q.Get("initialCid") == "" {
@@ -224,12 +229,11 @@ func (s *FtsSession) AddToCart() error {
 			return err
 		}
 		req, _ := http.NewRequest("GET", "https://geo.captcha-delivery.com/captcha/check", nil)
-		
+
 		query := req.URL.Query()
 		query.Add("cid", q.Get("cid"))
 		query.Add("icid", q.Get("initialCid"))
-		*/
-		
+
 		// curl 'https://api-js.datadome.co/js/' \
 		// -H 'Connection: keep-alive' \
 		// -H 'sec-ch-ua: "Google Chrome";v="89", "Chromium";v="89", ";Not A Brand";v="99"' \
@@ -246,7 +250,6 @@ func (s *FtsSession) AddToCart() error {
 		// --data-raw 'jsData=%7B%22ttst%22%3A34.56000000187487%2C%22ifov%22%3Afalse%2C%22wdifts%22%3Afalse%2C%22wdifrm%22%3Afalse%2C%22wdif%22%3Afalse%2C%22br_h%22%3A238%2C%22br_w%22%3A1414%2C%22br_oh%22%3A782%2C%22br_ow%22%3A1414%2C%22nddc%22%3A1%2C%22rs_h%22%3A900%2C%22rs_w%22%3A1440%2C%22rs_cd%22%3A30%2C%22phe%22%3Afalse%2C%22nm%22%3Afalse%2C%22jsf%22%3Afalse%2C%22ua%22%3A%22Mozilla%2F5.0%20(Macintosh%3B%20Intel%20Mac%20OS%20X%2011_1_0)%20AppleWebKit%2F537.36%20(KHTML%2C%20like%20Gecko)%20Chrome%2F89.0.4389.128%20Safari%2F537.36%22%2C%22lg%22%3A%22zh-CN%22%2C%22pr%22%3A2%2C%22hc%22%3A8%2C%22ars_h%22%3A785%2C%22ars_w%22%3A1440%2C%22tz%22%3A240%2C%22str_ss%22%3Atrue%2C%22str_ls%22%3Atrue%2C%22str_idb%22%3Atrue%2C%22str_odb%22%3Atrue%2C%22plgod%22%3Afalse%2C%22plg%22%3A2%2C%22plgne%22%3Atrue%2C%22plgre%22%3Atrue%2C%22plgof%22%3Afalse%2C%22plggt%22%3Afalse%2C%22pltod%22%3Afalse%2C%22lb%22%3Afalse%2C%22eva%22%3A33%2C%22lo%22%3Afalse%2C%22ts_mtp%22%3A0%2C%22ts_tec%22%3Afalse%2C%22ts_tsa%22%3Afalse%2C%22vnd%22%3A%22Google%20Inc.%22%2C%22bid%22%3A%22NA%22%2C%22mmt%22%3A%22application%2Fpdf%2Capplication%2Fx-google-chrome-pdf%22%2C%22plu%22%3A%22Chrome%20PDF%20Plugin%2CChrome%20PDF%20Viewer%22%2C%22hdn%22%3Afalse%2C%22awe%22%3Afalse%2C%22geb%22%3Afalse%2C%22dat%22%3Afalse%2C%22med%22%3A%22defined%22%2C%22aco%22%3A%22probably%22%2C%22acots%22%3Afalse%2C%22acmp%22%3A%22probably%22%2C%22acmpts%22%3Atrue%2C%22acw%22%3A%22probably%22%2C%22acwts%22%3Afalse%2C%22acma%22%3A%22maybe%22%2C%22acmats%22%3Afalse%2C%22acaa%22%3A%22probably%22%2C%22acaats%22%3Atrue%2C%22ac3%22%3A%22%22%2C%22ac3ts%22%3Afalse%2C%22acf%22%3A%22probably%22%2C%22acfts%22%3Afalse%2C%22acmp4%22%3A%22maybe%22%2C%22acmp4ts%22%3Afalse%2C%22acmp3%22%3A%22probably%22%2C%22acmp3ts%22%3Afalse%2C%22acwm%22%3A%22maybe%22%2C%22acwmts%22%3Afalse%2C%22ocpt%22%3Afalse%2C%22vco%22%3A%22probably%22%2C%22vcots%22%3Afalse%2C%22vch%22%3A%22probably%22%2C%22vchts%22%3Atrue%2C%22vcw%22%3A%22probably%22%2C%22vcwts%22%3Atrue%2C%22vc3%22%3A%22maybe%22%2C%22vc3ts%22%3Afalse%2C%22vcmp%22%3A%22%22%2C%22vcmpts%22%3Afalse%2C%22vcq%22%3A%22%22%2C%22vcqts%22%3Afalse%2C%22vc1%22%3A%22probably%22%2C%22vc1ts%22%3Afalse%2C%22dvm%22%3A8%2C%22sqt%22%3Afalse%2C%22so%22%3A%22landscape-primary%22%2C%22wbd%22%3Afalse%2C%22wbdm%22%3Atrue%2C%22wdw%22%3Atrue%2C%22cokys%22%3A%22bG9hZFRpbWVzY3NpYXBwcnVudGltZQ%3D%3DL%3D%22%2C%22ecpc%22%3Afalse%2C%22lgs%22%3Atrue%2C%22lgsod%22%3Afalse%2C%22bcda%22%3Atrue%2C%22idn%22%3Atrue%2C%22capi%22%3Afalse%2C%22svde%22%3Afalse%2C%22vpbq%22%3Atrue%2C%22xr%22%3Atrue%2C%22bgav%22%3Atrue%2C%22rri%22%3Atrue%2C%22idfr%22%3Atrue%2C%22ancs%22%3Atrue%2C%22inlc%22%3Atrue%2C%22cgca%22%3Atrue%2C%22inlf%22%3Atrue%2C%22tecd%22%3Atrue%2C%22sbct%22%3Atrue%2C%22aflt%22%3Atrue%2C%22rgp%22%3Atrue%2C%22bint%22%3Atrue%2C%22spwn%22%3Afalse%2C%22emt%22%3Afalse%2C%22bfr%22%3Afalse%2C%22dbov%22%3Afalse%2C%22glvd%22%3A%22Apple%22%2C%22glrd%22%3A%22Apple%20M1%22%2C%22tagpu%22%3A28.374999999869033%2C%22prm%22%3Atrue%2C%22tzp%22%3A%22America%2FNew_York%22%2C%22cvs%22%3Atrue%2C%22usb%22%3A%22defined%22%2C%22mp_cx%22%3A441%2C%22mp_cy%22%3A223%2C%22mp_tr%22%3Atrue%2C%22mp_mx%22%3A-32%2C%22mp_my%22%3A48%2C%22mp_sx%22%3A467%2C%22mp_sy%22%3A355%2C%22dcok%22%3A%22.captcha-delivery.com%22%2C%22ewsi%22%3Afalse%7D&events=%5B%7B%22source%22%3A%7B%22x%22%3A0%2C%22y%22%3A110%7D%2C%22message%22%3A%22scroll%22%2C%22date%22%3A1618952086117%2C%22id%22%3A2%7D%2C%7B%22source%22%3A%7B%22x%22%3A594%2C%22y%22%3A12%7D%2C%22message%22%3A%22mouse%20move%22%2C%22date%22%3A1618952086238%2C%22id%22%3A0%7D%2C%7B%22source%22%3A%7B%22x%22%3A0%2C%22y%22%3A25%7D%2C%22message%22%3A%22scroll%22%2C%22date%22%3A1618952086413%2C%22id%22%3A2%7D%2C%7B%22source%22%3A%7B%22x%22%3A645%2C%22y%22%3A237%7D%2C%22message%22%3A%22mouse%20move%22%2C%22date%22%3A1618952096203%2C%22id%22%3A0%7D%5D&eventCounters=%7B%22mouse%20move%22%3A2%2C%22mouse%20click%22%3A0%2C%22scroll%22%3A2%2C%22touch%20start%22%3A0%2C%22touch%20end%22%3A0%2C%22touch%20move%22%3A0%2C%22key%20press%22%3A0%2C%22key%20down%22%3A0%2C%22key%20up%22%3A0%7D&jsType=le&cid=FSr.0BDa9rIfJyR2k-Nfn.P3hI~VBbRCfiS9oXSUYAO7KW6dm7C5wL88M_BtwI~hP1dfQ0Y04.tireX1~GuXP4G~z~AtsfXc4p0c_PDw4I&ddk=A55FBF4311ED6F1BF9911EB71931D5&Referer=https%253A%252F%252Fgeo.captcha-delivery.com%252Fcaptcha%252F%253FinitialCid%253DAHrlqAAAAAMATp_lr5NTZ40ASVxejQ%253D%253D%2526cid%253DRz5iEB77LUtoVBOufDhkP2jiMSOV%7EUG2QeaztMBJD1pfw05LJ6CXhQxd%7ERWfQtUVjszCmrKC6q5YmscoCi8bNJ2ihK8CuXTIknMB_f.brV%2526referer%253Dhttp%25253A%25252F%25252Fwww.footlocker.com%25252Fapi%25252Fusers%25252Fcarts%25252Fcurrent%25252Fentries%2526hash%253DA55FBF4311ED6F1BF9911EB71931D5%2526t%253Dbv%2526s%253D17434&request=%252Fcaptcha%252F%253FinitialCid%253DAHrlqAAAAAMATp_lr5NTZ40ASVxejQ%253D%253D%2526cid%253DRz5iEB77LUtoVBOufDhkP2jiMSOV%7EUG2QeaztMBJD1pfw05LJ6CXhQxd%7ERWfQtUVjszCmrKC6q5YmscoCi8bNJ2ihK8CuXTIknMB_f.brV%2526referer%253Dhttp%25253A%25252F%25252Fwww.footlocker.com%25252Fapi%25252Fusers%25252Fcarts%25252Fcurrent%25252Fentries%2526hash%253DA55FBF4311ED6F1BF9911EB71931D5%2526t%253Dbv%2526s%253D17434&responsePage=hard-block&ddv=4.1.44' \
 		// --compressed
 
-		/*
 		query.Add("g-recaptcha-response", token)
 		query.Add("hash", q.Get("hash"))
 		query.Add("ua", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
@@ -254,20 +257,33 @@ func (s *FtsSession) AddToCart() error {
 		query.Add("parent_url", captchaURL)
 		query.Add("x-forwarded-for", "")
 		// query.Add("captchaChallenge", "")
-		// query.Add("ccid", )
+		// query.Add("ccid", "datadome_cookie_here")
 		query.Add("s", q.Get("s"))
 		req.URL.RawQuery = query.Encode()
 		resp, err := s.Client.Do(req)
 		if err != nil {
 			return err
 		}
-		ioutil.ReadAll(resp.Body)
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
 		defer resp.Body.Close()
 		if resp.StatusCode == 200 {
-			s.CallDataDome(captchaURL)
+			// The dd cookie is in response body :)
+			dd := make(map[string]interface{})
+			err = json.Unmarshal(body, &dd)
+			if err != nil {
+				return err
+			}
+			cookie, ok := dd["cookie"]
+			if ok {
+				s.DataDome = cookie.(string)[9:115]
+			}
+			fmt.Println(s.DataDome)
 			return errors.New("DONE")
 		}
-		*/
+
 		return errors.New("403")
 	case 503:
 		// TODO
@@ -284,6 +300,7 @@ func (s *FtsSession) SubmitEmail() error {
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
 	req.Header.Set("X-Fl-Request-Id", s.UUID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Origin", fmt.Sprintf("https://www.%s.com", s.Site))
 	req.Header.Set("Sec-Fetch-Site", "same-origin")
 	req.Header.Set("Sec-Fetch-Mode", "cors")
@@ -360,6 +377,7 @@ func (s *FtsSession) SubmitShipping() error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://www.%s.com/api/users/carts/current/addresses/shipping?timestamp=%v", s.Site, time.Now().UnixNano()/int64(time.Millisecond)), bytes.NewReader(payloadBytes))
 	req.Header.Set("X-Csrf-Token", s.CSRF)
 	req.Header.Set("X-Fl-Productid", s.SizeID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
@@ -439,6 +457,7 @@ func (s *FtsSession) SubmitBilling() error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://www.%s.com/api/users/carts/current/set-billing?timestamp=%v", s.Site, time.Now().UnixNano()/int64(time.Millisecond)), bytes.NewReader(payloadBytes))
 	req.Header.Set("X-Csrf-Token", s.CSRF)
 	req.Header.Set("X-Fl-Productid", s.SizeID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
@@ -491,6 +510,7 @@ func (s *FtsSession) PickPerson() error {
 	req, _ := http.NewRequest("PUT", fmt.Sprintf("https://www.%s.com/api/users/carts/current/pickperson?timestamp=%v", s.Site, time.Now().UnixNano()/int64(time.Millisecond)), bytes.NewReader(payloadBytes))
 	req.Header.Set("X-Csrf-Token", s.CSRF)
 	req.Header.Set("X-Fl-Productid", s.SizeID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")
@@ -560,6 +580,7 @@ func (s *FtsSession) SubmitOrder() error {
 	req, _ := http.NewRequest("POST", fmt.Sprintf("https://www.%s.com/api/v2/users/orders?timestamp=%v", s.Site, time.Now().UnixNano()/int64(time.Millisecond)), bytes.NewReader(payloadBytes))
 	req.Header.Set("X-Csrf-Token", s.CSRF)
 	req.Header.Set("X-Fl-Productid", s.SizeID)
+	req.Header.Set("X-Flapi-session-id", s.JSESSIONID)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 11_1_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.128 Safari/537.36")

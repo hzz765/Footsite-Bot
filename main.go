@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"net/url"
 	"os"
 	"strings"
 	"sync"
@@ -75,6 +76,10 @@ func main() {
 					break
 				}
 				time.Sleep(2 * time.Second)
+				rand.Seed(time.Now().UnixNano())
+				// Rotate Proxies
+				s.ProxyURL, _ = url.Parse(proxies[rand.Intn(len(proxies))].ConString())
+				logger.Printf(" [%s] [%s, sku=%s] Rotating Proxies\n", s.UUID, s.Site, s.SKU)
 			}
 			for {
 				if s.GetSizeID() == nil {
@@ -134,7 +139,7 @@ func main() {
 			for i := 0; i < 10; i++ {
 				logger.Printf(" [%s] [%s, sku=%s, size=%s] Submitting Order\n", s.UUID, s.Site, s.SKU, s.Size)
 				if s.SubmitOrder() == nil {
-					logger.Printf("%s [%s] [%s, sku=%s, size=%s] Check Email]%s\n", color.Green, s.UUID, s.Site, s.SKU, s.Size, color.Reset)
+					logger.Printf("%s [%s] [%s, sku=%s, size=%s] Check Email%s\n", color.Green, s.UUID, s.Site, s.SKU, s.Size, color.Reset)
 					go task.SendSuccessWebhook(strings.Title(s.Site), s.SKU, s.Size, "your_webhook_url_here")
 					wg.Done()
 					return
